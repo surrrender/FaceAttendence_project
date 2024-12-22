@@ -2,10 +2,15 @@
 from django.urls import path
 
 from . import views
+from .views import detect_face
+from .views import save_face_encoding
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
-    path("", views.index, name="index"),
-    path("<int:question_id>/", views.detail, name="detail"),
-    path("<int:question_id>/results/", views.results, name="results"),
-    path("<int:question_id>/vote/", views.vote, name="vote"),
+    path('detect_face/', detect_face, name='detect_face'),
+    path('save_face_encoding/', save_face_encoding, name='save_face_encoding')
 ]
+
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

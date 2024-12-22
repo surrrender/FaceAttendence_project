@@ -15,7 +15,6 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -27,19 +26,27 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# 配置媒体存储路径
+
+import os
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Application definition
 
 # 包含所有会在项目中启用的Django应用
 INSTALLED_APPS = [
-    'django.contrib.admin',# 管理员站点
-    'django.contrib.auth', # 认证授权系统
-    'django.contrib.contenttypes',# 内容类型框架
-    'django.contrib.sessions',# 会话框架
-    'django.contrib.messages',# 消息框架
-    'django.contrib.staticfiles',# 管理静态文件的框架
+    'django.contrib.admin',  # 管理员站点
+    'django.contrib.auth',  # 认证授权系统
+    'django.contrib.contenttypes',  # 内容类型框架
+    'django.contrib.sessions',  # 会话框架
+    'django.contrib.messages',  # 消息框架
+    'django.contrib.staticfiles',  # 管理静态文件的框架
     'FA.apps.FaConfig',
-    'rest_framework',# use django REST framework to offer API
+    'rest_framework',  # use django REST framework to offer API
     'rest_framework.authtoken',
     'users',  # 处理用户登录和注册相关的逻辑
     'corsheaders'
@@ -54,7 +61,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware'
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
 ]
 CORS_ORIGIN_ALLOW_ALL = True  # 或者你可以设置为 False 并限制具体的域
 
@@ -78,27 +86,26 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 import pymysql
+
 pymysql.install_as_MySQLdb()
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 使用 MySQL 数据库引擎
-        'NAME': 'faceattendence',          # 替换为你的数据库名称
-        'USER': 'root',          # 替换为你的数据库用户名
+        'NAME': 'faceattendence',  # 替换为你的数据库名称
+        'USER': 'root',  # 替换为你的数据库用户名
         'PASSWORD': 'szll987612345',  # 替换为你的数据库密码
-        'HOST': 'localhost',                   # 如果 MySQL 在本地运行，保持 localhost；如果是远程，使用远程服务器的 IP 或域名
-        'PORT': '3306',                        # MySQL 的默认端口是 3306
+        'HOST': 'localhost',  # 如果 MySQL 在本地运行，保持 localhost；如果是远程，使用远程服务器的 IP 或域名
+        'PORT': '3306',  # MySQL 的默认端口是 3306
     }
     # 'default': {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -118,7 +125,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -130,7 +136,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -140,4 +145,3 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
