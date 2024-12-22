@@ -1,0 +1,2 @@
+# FaceAttendence_project
+这是一个通过照片人脸识别来进行考勤的系统
