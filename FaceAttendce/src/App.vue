@@ -1,6 +1,4 @@
 <script setup>
-// import HelloWorld from './components/HelloWorld.vue'
-// import TheWelcome from './components/TheWelcome.vue'
 import { useRouter } from 'vue-router';
 import Login from './components/Login.vue';
 import {ref} from 'vue';
@@ -46,15 +44,10 @@ const closeDialog = () => {
             <el-menu-item index="3" @click="">
               <template #title>查看考勤信息</template>
             </el-menu-item>
-            <!-- <el-menu-item index="4" @click="">
-              <template #title>车辆收藏夹</template>
-            </el-menu-item> -->
           </el-menu>
         </el-aside>
         <router-view></router-view>
-        <!-- <el-main>Main</el-main> -->
       </el-container>
-      <!-- <el-main>Main</el-main> -->
     </el-container>
   </div>
 </template>

@@ -16,3 +16,10 @@ class FaceEncoding(models.Model):
     def __str__(self):
         return self.name
 
+
+class AbsentPerson(models.Model):
+    time = models.TimeField()
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name

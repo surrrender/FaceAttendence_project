@@ -1,6 +1,6 @@
 import io
 import traceback
-
+from datetime import datetime
 from PIL import Image
 import face_recognition
 import numpy as np
@@ -14,6 +14,7 @@ import base64
 
 from rest_framework.utils import json
 from .models import FaceEncoding
+from .models import AbsentPerson
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 @csrf_exempt
@@ -49,20 +50,6 @@ def detect_face(request):
         )
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-    #     #获取所有人脸编码
-    #     face_encodings = face_recognition.face_encodings(image_np)
-    #     print(face_encodings[0])
-    #
-    #     # 将每个面部编码转换为 Base64 编码
-    #     # encodings_list = [encoding.tolist() for encoding in face_encodings]
-    #     encodings_list = [base64.b64encode(encoding).decode('utf-8')for encoding in face_encodings]
-    #     # 返回文件路径或其他需要的信息
-    #     return JsonResponse(
-    #         {'message': 'File uploaded successfully', 'face_encodings': encodings_list})
-    # else:
-    #     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 @csrf_exempt
 def save_face_encoding(request):
@@ -130,7 +117,16 @@ def check_attendance(request):
     最终将集合剩余的人名再次存储在数据库中一个信息的table attendance中，然后发送给前端
     """
     if request.method == 'POST':
+        print(request)
         uploaded_file = request.FILES.get('file')  # 前端传递的文件字段名是 'file'
+        attendance_date = request.POST.get('time')
+        print(attendance_date)
+        try:
+            time_obj = datetime.strptime(attendance_date, '%Y/%m/%d %H:%M')  # 根据前端的格式解析时间
+            print("Received time:", time_obj)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid time format'}, status=400)
+
         if not uploaded_file:
             return JsonResponse({'error': 'No file provided'}, status=400)
 
@@ -167,9 +163,14 @@ def check_attendance(request):
 
             absent_names = name_set - identified_names
             absent_names = list(absent_names)
-            print(absent_names)
+            return_value = [{'name': name, 'time': attendance_date} for name in absent_names]
+            print(return_value)
+            # 存储人名
+            for name in absent_names:
+                absent_person = AbsentPerson(time=time_obj, name=name)
+                absent_person.save()
             return JsonResponse(
-                {'message': '人脸位置信息', 'absent_names': absent_names}
+                {'message': '人脸位置信息', 'absent_names': return_value}
             )
 
         except Exception as e:

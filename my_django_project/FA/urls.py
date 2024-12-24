@@ -10,7 +10,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('detect_face/', detect_face, name='detect_face'),
     path('save_face_encoding/', save_face_encoding, name='save_face_encoding'),
-    path('check_attendance/',check_attendance,name = 'check_attendance'),
+    path('check_attendance/', check_attendance, name='check_attendance'),
 ]
 
 

@@ -2,6 +2,7 @@ from django.contrib import admin
 
 # Register your models here.
 from .models import FaceEncoding
+from .models import AbsentPerson
 
 
 class FaceEncodingAdmin(admin.ModelAdmin):
@@ -10,3 +11,4 @@ class FaceEncodingAdmin(admin.ModelAdmin):
 
 # admin.site.register(FaceEncoding)
 admin.site.register(FaceEncoding, FaceEncodingAdmin)
+admin.site.register(AbsentPerson)
