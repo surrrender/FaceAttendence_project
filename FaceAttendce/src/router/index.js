@@ -4,13 +4,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 import RegisterFaces from '@/components/RegisterFaces.vue';
 import Register from '@/components/Register.vue';
 import Login from '@/components/Login.vue';
+import CheckAttendance from '@/components/CheckAttendance.vue';
 
 const routes = [
   // { path: '/', component: Home },
   // { path: '/about', component: About },
   { path:'/RegisterFaces',component: RegisterFaces},
   { path:'/Register',component: Register},
-  { path:'/Login',component: Login}
+  { path:'/Login',component: Login},
+  { path:'/CheckAttendance',component: CheckAttendance},
 ];
 
 const router = createRouter({

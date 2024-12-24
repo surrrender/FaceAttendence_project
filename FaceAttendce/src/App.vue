@@ -8,6 +8,9 @@ const router = useRouter();
 const goToRegisterFaces = () => {
   router.push('/RegisterFaces')
 }
+const goToCheckAttendance = () => {
+  router.push('/CheckAttendance')
+}
 const goToLogin = () => {
   router.push('/Login')
 }
@@ -36,7 +39,7 @@ const closeDialog = () => {
               <template #title>注册人脸</template>
             </el-menu-item>
 
-            <el-menu-item index="2" @click="">
+            <el-menu-item index="2" @click="goToCheckAttendance">
               <template #title>检查考勤</template>
             </el-menu-item>
 

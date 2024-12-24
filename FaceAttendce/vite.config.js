@@ -15,4 +15,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    // host: '127.0.0.1', // 强制使用 IPv4 地址
+    port: 8001, // 确保端口号未被占用
+  },
 })

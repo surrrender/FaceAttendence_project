@@ -4,12 +4,13 @@ from django.urls import path
 from . import views
 from .views import detect_face
 from .views import save_face_encoding
+from .views import check_attendance
 from django.conf import settings
 from django.conf.urls.static import static
-
 urlpatterns = [
     path('detect_face/', detect_face, name='detect_face'),
-    path('save_face_encoding/', save_face_encoding, name='save_face_encoding')
+    path('save_face_encoding/', save_face_encoding, name='save_face_encoding'),
+    path('check_attendance/',check_attendance,name = 'check_attendance'),
 ]
 
 
