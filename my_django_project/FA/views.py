@@ -1,7 +1,7 @@
 import io
 import traceback
 from datetime import datetime
-from PIL import Image
+
 import face_recognition
 import numpy as np
 
@@ -10,27 +10,34 @@ from django.views.decorators.csrf import csrf_exempt
 import os
 from django.conf import settings
 
-import base64
-
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import permission_classes, api_view, authentication_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.utils import json
 from .models import FaceEncoding
 from .models import AbsentPerson
-from django.core.files.uploadedfile import InMemoryUploadedFile
+from .models import ClassInstance
+
 
 @csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def detect_face(request):
     if request.method == 'POST':
         uploaded_file = request.FILES.get('file')  # 前端传递的文件字段名是 'file'
         if not uploaded_file:
             return JsonResponse({'error': 'No file provided'}, status=400)
-
+        lecture_name = request.POST.get('lecture_name')
+        if not lecture_name:
+            return JsonResponse({'error': 'No lecture provided'}, status=400)
         # 验证文件类型和大小
         if uploaded_file.content_type not in ['image/jpeg', 'image/png']:
             return JsonResponse({'error': 'Unsupported file type'}, status=400)
 
         # 保存文件
         save_path = os.path.join(settings.MEDIA_ROOT, uploaded_file.name)
-        print(save_path)
+
         # 确保目标目录存在，创建不存在的目录
         dir_name = os.path.dirname(save_path)
         if not os.path.exists(dir_name):
@@ -44,14 +51,17 @@ def detect_face(request):
         image = face_recognition.load_image_file(save_path)
         # 人脸识别
         face_locations = face_recognition.face_locations(image)
-        print("发送之前的location", face_locations)
         return JsonResponse(
             {'message': '人脸位置信息', 'face_locations': face_locations, 'save_path': save_path}
         )
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+
 @csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def save_face_encoding(request):
     """
     接收前端请求，提取并存储人脸编码到数据库。
@@ -61,34 +71,27 @@ def save_face_encoding(request):
         try:
             # 从请求中获取人脸编码和姓名
             data = json.loads(request.body)
+
             face_locations = data.get('face_locations')
             names = data.get('names')
             image_path = data.get('save_path')
-
-            print("location from frontend", face_locations)
-            print(names)
-            print(image_path)
+            lecture_name = data.get('lecture_name')
             # 检查必需的字段是否存在
             if not face_locations or not names or not image_path:
                 return JsonResponse({'error': 'Missing face_locations, names, or image_path'}, status=400)
+            # 创建对应的班级
+            class_instance = ClassInstance(user=request.user, lecture=lecture_name, image_path=image_path)
+            class_instance.save()
             # load image
             image = face_recognition.load_image_file(image_path)
             for face_location, name in zip(face_locations, names):
-                # 通过face_location来从image_path中加载图片，然后通过face_recognition获得对应人脸的编码,编码的格式为    # 存储人脸编码，BLOB 类型
-                #     encoding = models.BinaryField()
-                # 讲人脸编码和对应姓名保存到数据库
-                print(face_location, name)
-                # extract the encoding of the current face
                 encodings = face_recognition.face_encodings(image, [tuple(face_location)])
-                # print("encodings的数据",encodings)
                 if encodings:
-                    # 取第一个编码（通常只检测一个人脸）
-                    # print("encodings[0]的数据", encodings[0])
                     encoding_binary = encodings[0].tobytes()  # 转为字节格式存储
-                    # print(encoding_binary)
+                    class_instance = ClassInstance.objects.get(user=request.user, lecture=lecture_name)
                     # 创建数据库对象并保存
-                    face_encoding = FaceEncoding(name=name, encoding=encoding_binary)
-                    # print(face_encoding.encoding)
+                    face_encoding = FaceEncoding(class_instance=class_instance, lecture=lecture_name, name=name,
+                                                 encoding=encoding_binary)
                     face_encoding.save()
 
                 else:
@@ -100,15 +103,10 @@ def save_face_encoding(request):
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-def convert_uploaded_file_to_bytes(uploaded_file: InMemoryUploadedFile) -> bytes:
-    # 检查上传的文件是否存在
-    if uploaded_file:
-        # 读取文件内容并返回字节数据
-        byte_data = uploaded_file.read()  # 这将是一个字节串
-        return byte_data
-    return None
-
 @csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def check_attendance(request):
     """
     接收前端发送来的照片，使用face_recognition来提取出所有的人脸编码
@@ -117,13 +115,11 @@ def check_attendance(request):
     最终将集合剩余的人名再次存储在数据库中一个信息的table attendance中，然后发送给前端
     """
     if request.method == 'POST':
-        print(request)
         uploaded_file = request.FILES.get('file')  # 前端传递的文件字段名是 'file'
         attendance_date = request.POST.get('time')
-        print(attendance_date)
+        lecture_name = request.POST.get('lecture_name')
         try:
             time_obj = datetime.strptime(attendance_date, '%Y/%m/%d %H:%M')  # 根据前端的格式解析时间
-            print("Received time:", time_obj)
         except ValueError:
             return JsonResponse({'error': 'Invalid time format'}, status=400)
 
@@ -133,13 +129,9 @@ def check_attendance(request):
         # 验证文件类型和大小
         if uploaded_file.content_type not in ['image/jpeg', 'image/png']:
             return JsonResponse({'error': 'Unsupported file type'}, status=400)
-
-        print("正确请求了视图")
         try:
-            print(type(uploaded_file))
             # 讲上传文件读取为字节数据
             image_bytes = uploaded_file.read()
-            # 讲PIL图像转换为numpy数组（face_recognition需要这种格式）
             image_np = face_recognition.load_image_file(io.BytesIO(image_bytes))
 
             face_encodings = face_recognition.face_encodings(image_np)
@@ -147,7 +139,7 @@ def check_attendance(request):
                 return JsonResponse({'message': 'No faces found in the image'}, status=200)
 
             # 从数据库中获取所有人名和对应的编码
-            all_register_faces = FaceEncoding.objects.all()
+            all_register_faces = FaceEncoding.objects.filter(lecture=lecture_name)
             name_set = set(face.name for face in all_register_faces)
 
             # 比对人脸编码，识别出席人员
@@ -163,11 +155,14 @@ def check_attendance(request):
 
             absent_names = name_set - identified_names
             absent_names = list(absent_names)
+            # 如何将数组转为json格式的数据
             return_value = [{'name': name, 'time': attendance_date} for name in absent_names]
             print(return_value)
+
+            class_instance = ClassInstance.objects.get(user=request.user, lecture=lecture_name)
             # 存储人名
             for name in absent_names:
-                absent_person = AbsentPerson(time=time_obj, name=name)
+                absent_person = AbsentPerson(class_instance=class_instance, time=time_obj, name=name)
                 absent_person.save()
             return JsonResponse(
                 {'message': '人脸位置信息', 'absent_names': return_value}
@@ -177,3 +172,57 @@ def check_attendance(request):
             print(str(e))
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def require_lectures(request):
+    print("进入了获取课程信息的视图")
+    try:
+        class_instances = ClassInstance.objects.filter(user=request.user)
+        lectures = list(class_instance.lecture for class_instance in class_instances)
+        return_value = [{'value': lecture} for lecture in lectures]
+        return JsonResponse(
+            {'message': '课程信息', 'lectureNames': return_value}, status=200
+        )
+    except Exception as e:
+        print(str(e))
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def show_absent_information(request):
+    try:
+        class_instances = ClassInstance.objects.filter(user=request.user)
+        class_instance = None
+        time_obj = None
+        # 获取前端发送来的课程和时间信息
+        data = json.loads(request.body)
+
+        if 'lectureName' in data and data['lectureName']:
+            class_instance = ClassInstance.objects.get(user=request.user, lecture=data['lectureName'])
+        if 'date' in data and data['date']:
+            time_obj = datetime.strptime(data['date'], '%Y/%m/%d %H:%M')
+
+        if class_instance is None and time_obj is None:# 发送过来的两个信息都为空
+            absent_persons = AbsentPerson.objects.filter(class_instance__in=class_instances)
+        else:# 一个为空和两个都不为空的情况
+            if class_instance is not None:
+                absent_persons = AbsentPerson.objects.filter(class_instance=class_instance)
+            if time_obj is not None:
+                absent_persons = AbsentPerson.objects.filter(time=time_obj)
+
+        return_value = [{'lecture': person.class_instance.lecture, 'time': person.time, 'name': person.name} for person in absent_persons]
+        return JsonResponse(
+            {'message': '课程信息', 'tableData': return_value}, status=200
+        )
+    except Exception as e:
+        print(str(e))
+        traceback.print_exc()
+        return JsonResponse({'error': str(e)}, status=500)

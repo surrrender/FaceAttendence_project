@@ -1,19 +1,24 @@
 <template>
   <div class="container">
     <div class="block">
-      <!-- <span class="demonstration">Use value-format</span> -->
-      <!-- <div class="demonstration">Value：{{ value2 }}</div> -->
-      <!-- <el-date-picker
-        v-model="value2"
-        type="datetime"
-        placeholder="请选择检查考勤的时间"
-        format="YYYY/MM/DD hh:mm:ss"
-        value-format="YYYY/MM/DD hh:mm:ss a"
-      /> -->
+      <el-select
+      v-model="lectureName"
+      placeholder="请选择要查看考勤的班级"
+      size="large"
+      style="width: 240px"
+    >
+      <el-option
+        v-for="item in lectureNames"
+        :key="item.value"
+        :label="item.label"
+        :value="item.value"
+      />
+    </el-select>
       <el-date-picker
+        size="large"
         v-model="value2"
         type="datetime"
-        placeholder="Pick a Date"
+        placeholder="请选择查看考勤的具体时间"
         format="YYYY-MM-DD HH:mm"
         date-format="YYYY/MM/DD"
         time-format="HH:mm"
@@ -51,7 +56,7 @@
 
 <script setup>
 import { UploadFilled } from "@element-plus/icons-vue";
-import { ref, computed } from "vue";
+import { ref, computed,onMounted } from "vue";
 import axios from "axios";
 import { decode } from "base-64";
 
@@ -61,12 +66,26 @@ const currentFaceIndex = ref(0);
 const dialogVisible = ref(false);
 const TableData = ref([]);
 const value2 = ref("");
-
+const lectureName = ref('');
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 
-// const formattedAbsentNames = computed(() => {
-//   return absent_names.value.map(name => ({ name }));
-// });
+
+const lectureNames = ref([]);
+onMounted(async () => {
+  try {
+    const baseURL = import.meta.env.VITE_API_BASE_URL;
+    const token = localStorage.getItem('token');
+    const response = await axios.get(`${baseURL}FA/require_lectures/`, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    });
+    lectureNames.value = response.data.lectureNames;
+    console.log(lectureNames.value);
+  } catch(error) {
+    console.error('获取课程数据错误',error);
+  }
+});
 
 const customUpload = async (options) => {
   const { file } = options;
@@ -74,10 +93,13 @@ const customUpload = async (options) => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("time", value2.value);
+    formData.append("lecture_name",lectureName.value);
+    const token = localStorage.getItem('token');
     const response = await axios.post(`${baseURL}FA/check_attendance/`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
-      },
+        'Authorization': `Token ${token}`,  
+        },
     });
     console.log("Upload success:", response.data.message);
     console.log(response.data.absent_names);
@@ -91,15 +113,19 @@ const customUpload = async (options) => {
 };
 </script>
 
-<style>
+<style scoped>
+.el-date-picker{
+  margin-left: 20px;
+}
+      
+
 .container {
   display: flex;
   flex-direction: column;
 }
 .upload-demo {
-  /* display: flex;
-      flex-direction: column; */
   width: 1000px;
+  background-color: rgb(248, 232, 213);
 }
 .el-icon--upload {
   height: 500px;

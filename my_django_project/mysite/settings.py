@@ -95,7 +95,7 @@ pymysql.install_as_MySQLdb()
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # 使用 MySQL 数据库引擎
-        'NAME': 'faceattendence',  # 替换为你的数据库名称
+        'NAME': 'face_attendance',  # 替换为你的数据库名称
         'USER': 'root',  # 替换为你的数据库用户名
         'PASSWORD': 'szll987612345',  # 替换为你的数据库密码
         'HOST': 'localhost',  # 如果 MySQL 在本地运行，保持 localhost；如果是远程，使用远程服务器的 IP 或域名

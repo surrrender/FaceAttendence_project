@@ -5,6 +5,7 @@ import RegisterFaces from '@/components/RegisterFaces.vue';
 import Register from '@/components/Register.vue';
 import Login from '@/components/Login.vue';
 import CheckAttendance from '@/components/CheckAttendance.vue';
+import AttendanceInformation from '@/components/AttendanceInformation.vue';
 
 const routes = [
   // { path: '/', component: Home },
@@ -13,6 +14,7 @@ const routes = [
   { path:'/Register',component: Register},
   { path:'/Login',component: Login},
   { path:'/CheckAttendance',component: CheckAttendance},
+  { path:'/AttendanceInformation',component: AttendanceInformation}
 ];
 
 const router = createRouter({
